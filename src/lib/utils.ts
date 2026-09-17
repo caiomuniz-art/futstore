@@ -1,0 +1,20 @@
+export function formatBRL(value: number) {
+  return value.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  })
+}
+
+export function readStorage<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return fallback
+    return JSON.parse(raw) as T
+  } catch {
+    return fallback
+  }
+}
+
+export function writeStorage<T>(key: string, value: T) {
+  localStorage.setItem(key, JSON.stringify(value))
+}
