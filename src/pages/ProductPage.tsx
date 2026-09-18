@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ProductCard } from '../components/product/ProductCard'
 import { Badge } from '../components/ui/Badge'
 import { Rating } from '../components/ui/Rating'
@@ -15,6 +15,7 @@ export function ProductPage() {
   const { addItem } = useCart()
   const { has, toggle } = useFavorites()
   const { notify } = useToast()
+  const navigate = useNavigate()
   const [size, setSize] = useState<number | null>(null)
   const [photo, setPhoto] = useState('')
 
@@ -123,10 +124,25 @@ export function ProductPage() {
             </button>
             <button
               type="button"
+              className="rounded-full bg-pitch px-6 py-3 font-semibold text-white hover:bg-pitch-light"
+              onClick={() => {
+                if (!size) {
+                  notify('Escolha um tamanho')
+                  return
+                }
+                addItem(product.id, size)
+                navigate('/carrinho')
+              }}
+            >
+              Comprar agora
+            </button>
+            <button
+              type="button"
               className="rounded-full border border-pitch/20 px-6 py-3 font-semibold text-pitch"
               onClick={() => {
+                const liked = has(product.id)
                 toggle(product.id)
-                notify(has(product.id) ? 'Removido dos favoritos' : 'Salvo nos favoritos')
+                notify(liked ? 'Removido dos favoritos' : 'Salvo nos favoritos')
               }}
             >
               {has(product.id) ? 'Favoritado' : 'Favoritar'}

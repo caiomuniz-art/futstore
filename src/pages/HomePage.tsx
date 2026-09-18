@@ -56,6 +56,25 @@ export function HomePage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-4 py-10">
+        <div className="grid gap-3 sm:grid-cols-3">
+          {[
+            { label: 'Campo', to: '/chuteiras?campo=Campo', text: 'Travas FG para gramado natural' },
+            { label: 'Society', to: '/chuteiras?campo=Society', text: 'Sola TF para grama sintética' },
+            { label: 'Futsal', to: '/chuteiras?campo=Futsal', text: 'Sola lisa para a quadra' },
+          ].map((item) => (
+            <Link
+              key={item.label}
+              to={item.to}
+              className="rounded-3xl bg-white px-5 py-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <p className="text-lg font-extrabold text-pitch">{item.label}</p>
+              <p className="text-sm text-neutral-600">{item.text}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <section className="mx-auto max-w-6xl px-4 py-16">
         <SectionHeading
           kicker="Seleção da casa"

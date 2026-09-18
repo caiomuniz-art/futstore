@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ProductCard } from '../components/product/ProductCard'
 import { brands, fieldTypes, products } from '../data/products'
@@ -6,14 +6,28 @@ import type { FieldType } from '../types'
 
 type SortKey = 'popularidade' | 'preco-asc' | 'preco-desc'
 
+function parseList(value: string | null) {
+  return value ? value.split(',').filter(Boolean) : []
+}
+
 export function CatalogPage() {
   const [params, setParams] = useSearchParams()
   const q = params.get('q') ?? ''
   const [search, setSearch] = useState(q)
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([])
-  const [selectedFields, setSelectedFields] = useState<FieldType[]>([])
-  const [maxPrice, setMaxPrice] = useState(1600)
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(() => parseList(params.get('marca')))
+  const [selectedFields, setSelectedFields] = useState<FieldType[]>(
+    () => parseList(params.get('campo')) as FieldType[],
+  )
+  const [maxPrice, setMaxPrice] = useState(() => Number(params.get('preco')) || 1600)
   const sort = (params.get('ordenar') as SortKey) || 'popularidade'
+
+  useEffect(() => {
+    setSearch(params.get('q') ?? '')
+    setSelectedBrands(parseList(params.get('marca')))
+    setSelectedFields(parseList(params.get('campo')) as FieldType[])
+    const price = Number(params.get('preco'))
+    if (price) setMaxPrice(price)
+  }, [params])
 
   const filtered = useMemo(() => {
     const query = (params.get('q') ?? search).trim().toLowerCase()
@@ -36,8 +50,25 @@ export function CatalogPage() {
     })
   }, [params, search, selectedBrands, selectedFields, maxPrice, sort])
 
-  function toggleValue<T>(list: T[], value: T, setter: (next: T[]) => void) {
-    setter(list.includes(value) ? list.filter((item) => item !== value) : [...list, value])
+  function patchParams(key: string, value: string | null) {
+    const next = new URLSearchParams(params)
+    if (!value) next.delete(key)
+    else next.set(key, value)
+    setParams(next)
+  }
+
+  function toggleBrand(brand: string) {
+    const next = selectedBrands.includes(brand)
+      ? selectedBrands.filter((item) => item !== brand)
+      : [...selectedBrands, brand]
+    patchParams('marca', next.length ? next.join(',') : null)
+  }
+
+  function toggleField(field: FieldType) {
+    const next = selectedFields.includes(field)
+      ? selectedFields.filter((item) => item !== field)
+      : [...selectedFields, field]
+    patchParams('campo', next.length ? next.join(',') : null)
   }
 
   function applySearch(event: FormEvent) {
@@ -56,8 +87,10 @@ export function CatalogPage() {
         </p>
         <h1 className="text-4xl font-extrabold text-pitch">Todas as chuteiras</h1>
         <p className="mt-2 text-neutral-600">
-          Filtre por marca, preço e tipo de campo. {filtered.length} modelo
-          {filtered.length === 1 ? '' : 's'} encontrado{filtered.length === 1 ? '' : 's'}.
+          Filtre por marca, preço e tipo de campo.{' '}
+          {filtered.length === 1
+            ? '1 modelo encontrado.'
+            : `${filtered.length} modelos encontrados.`}
         </p>
       </div>
 
@@ -86,7 +119,7 @@ export function CatalogPage() {
                   <input
                     type="checkbox"
                     checked={selectedBrands.includes(brand)}
-                    onChange={() => toggleValue(selectedBrands, brand, setSelectedBrands)}
+                    onChange={() => toggleBrand(brand)}
                   />
                   {brand}
                 </label>
@@ -101,7 +134,11 @@ export function CatalogPage() {
               max={1600}
               step={50}
               value={maxPrice}
-              onChange={(event) => setMaxPrice(Number(event.target.value))}
+              onChange={(event) => {
+                const value = Number(event.target.value)
+                setMaxPrice(value)
+                patchParams('preco', String(value))
+              }}
               className="mt-3 w-full accent-pitch"
             />
           </div>
@@ -113,7 +150,7 @@ export function CatalogPage() {
                   <input
                     type="checkbox"
                     checked={selectedFields.includes(field)}
-                    onChange={() => toggleValue(selectedFields, field, setSelectedFields)}
+                    onChange={() => toggleField(field)}
                   />
                   {field}
                 </label>

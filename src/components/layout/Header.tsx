@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { products } from '../../data/products'
 import { formatBRL } from '../../lib/utils'
 import { useAuth } from '../../context/AuthContext'
@@ -54,9 +54,16 @@ export function Header() {
 
         <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
           {nav.map((item) => (
-            <Link key={item.to} to={item.to} className="text-white/80 hover:text-lime">
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              className={({ isActive }) =>
+                isActive ? 'text-lime' : 'text-white/80 hover:text-lime'
+              }
+            >
               {item.label}
-            </Link>
+            </NavLink>
           ))}
         </nav>
 
