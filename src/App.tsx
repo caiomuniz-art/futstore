@@ -14,6 +14,8 @@ import { LoginPage } from './pages/LoginPage'
 import { OffersPage } from './pages/OffersPage'
 import { OrderPage } from './pages/OrderPage'
 import { ProductPage } from './pages/ProductPage'
+import { RegisterPage } from './pages/RegisterPage'
+import { ProtectedRoute } from './components/auth/ProtectedRoute'
 
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
 
@@ -32,10 +34,32 @@ export default function App() {
                   <Route path="/sobre" element={<AboutPage />} />
                   <Route path="/produto/:id" element={<ProductPage />} />
                   <Route path="/carrinho" element={<CartPage />} />
-                  <Route path="/favoritos" element={<FavoritesPage />} />
+                  <Route
+                    path="/favoritos"
+                    element={
+                      <ProtectedRoute>
+                        <FavoritesPage />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route path="/entrar" element={<LoginPage />} />
-                  <Route path="/checkout" element={<CheckoutPage />} />
-                  <Route path="/pedido/:id" element={<OrderPage />} />
+                  <Route path="/cadastro" element={<RegisterPage />} />
+                  <Route
+                    path="/checkout"
+                    element={
+                      <ProtectedRoute>
+                        <CheckoutPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/pedido/:id"
+                    element={
+                      <ProtectedRoute>
+                        <OrderPage />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>
               </Routes>

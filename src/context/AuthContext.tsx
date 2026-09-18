@@ -2,73 +2,84 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react'
-import { readStorage, writeStorage } from '../lib/utils'
-import type { SessionUser, UserAccount } from '../types'
-
-const USERS_KEY = 'futstore_users'
-const SESSION_KEY = 'futstore_session'
+import { api, getApiError } from '../lib/api'
+import type { SessionUser } from '../types'
 
 type AuthContextValue = {
   user: SessionUser | null
-  login: (email: string, password: string) => string | null
-  register: (name: string, email: string, password: string) => string | null
-  logout: () => void
+  ready: boolean
+  login: (email: string, password: string) => Promise<string | null>
+  register: (
+    email: string,
+    password: string,
+    confirmPassword: string,
+  ) => Promise<string | null>
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<SessionUser | null>(() =>
-    readStorage(SESSION_KEY, null),
-  )
+  const [user, setUser] = useState<SessionUser | null>(null)
+  const [ready, setReady] = useState(false)
 
-  const login = useCallback((email: string, password: string) => {
-    const users = readStorage<UserAccount[]>(USERS_KEY, [])
-    const found = users.find(
-      (item) =>
-        item.email.toLowerCase() === email.trim().toLowerCase() &&
-        item.password === password,
-    )
-    if (!found) return 'E-mail ou senha inválidos.'
-    const session = { name: found.name, email: found.email }
-    writeStorage(SESSION_KEY, session)
-    setUser(session)
-    return null
+  useEffect(() => {
+    let active = true
+    api
+      .me()
+      .then((data) => {
+        if (active) setUser(data.user)
+      })
+      .catch(() => {
+        if (active) setUser(null)
+      })
+      .finally(() => {
+        if (active) setReady(true)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const login = useCallback(async (email: string, password: string) => {
+    try {
+      const data = await api.login(email, password)
+      setUser(data.user)
+      return null
+    } catch (error) {
+      return getApiError(error).error
+    }
   }, [])
 
   const register = useCallback(
-    (name: string, email: string, password: string) => {
-      if (password.length < 4) return 'A senha precisa ter pelo menos 4 caracteres.'
-      const users = readStorage<UserAccount[]>(USERS_KEY, [])
-      if (users.some((item) => item.email.toLowerCase() === email.trim().toLowerCase())) {
-        return 'Este e-mail já está cadastrado.'
+    async (email: string, password: string, confirmPassword: string) => {
+      try {
+        await api.register(email, password, confirmPassword)
+        return null
+      } catch (error) {
+        return getApiError(error).error
       }
-      const account: UserAccount = {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        password,
-      }
-      writeStorage(USERS_KEY, [...users, account])
-      const session = { name: account.name, email: account.email }
-      writeStorage(SESSION_KEY, session)
-      setUser(session)
-      return null
     },
     [],
   )
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(SESSION_KEY)
+  const logout = useCallback(async () => {
+    try {
+      await api.logout()
+    } catch {
+      /* session is cleared locally anyway */
+    }
     setUser(null)
   }, [])
 
   const value = useMemo(
-    () => ({ user, login, register, logout }),
-    [user, login, register, logout],
+    () => ({ user, ready, login, register, logout }),
+    [user, ready, login, register, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

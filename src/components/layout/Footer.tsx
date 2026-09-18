@@ -39,7 +39,10 @@ export function Footer() {
               Sobre nós
             </Link>
             <Link to="/entrar" className="hover:text-lime">
-              Minha conta
+              Entrar
+            </Link>
+            <Link to="/cadastro" className="hover:text-lime">
+              Criar conta
             </Link>
             <p>CNPJ 12.345.678/0001-90</p>
             <p>São Paulo — SP</p>

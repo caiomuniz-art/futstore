@@ -105,7 +105,9 @@ export function Header() {
               <span className="max-w-28 truncate text-sm text-white/80">{user.name}</span>
               <button
                 type="button"
-                onClick={logout}
+                onClick={() => {
+                void logout()
+              }}
                 className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold hover:bg-white/10"
               >
                 Sair
@@ -147,7 +149,7 @@ export function Header() {
               type="button"
               className="block w-full rounded-xl px-3 py-2 text-left hover:bg-white/10"
               onClick={() => {
-                logout()
+                void logout()
                 setOpen(false)
               }}
             >

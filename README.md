@@ -1,22 +1,28 @@
 # FutStore
 
-Loja virtual de chuteiras (campo, society e futsal) feita com React, Vite, TypeScript, Tailwind CSS e React Router.
+Loja virtual de chuteiras feita com React, Vite, TypeScript, Tailwind CSS e React Router.
 
-Carrinho, favoritos, cadastro/login e newsletter ficam salvos no `localStorage` deste navegador.
+A autenticação usa um backend Node local: senhas com PBKDF2-SHA256 (salt aleatório) e sessão em cookie HTTP-only. O arquivo de contas fica em `server/data/users.json` e **não** entra no Git.
 
 ## Como rodar
+
+1. Copie o ambiente:
+
+```bash
+copy .env.example .env
+```
+
+No `.env`, troque `JWT_SECRET` por uma frase longa e aleatória.
+
+2. Instale e suba API + site:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Abra o endereço que o Vite mostrar (em geral `http://localhost:5173`).
+3. Abra `http://localhost:5173`.
 
-## Páginas
-
-- `/` — home
-- `/chuteiras` — catálogo com busca, filtros e ordenação
-- `/produto/:id` — detalhe, tamanho, carrinho e favoritos
-- `/ofertas`, `/sobre`, `/carrinho`, `/favoritos`, `/entrar`
-- `/checkout` e `/pedido/:id` — compra simulada
+- `/cadastro` — criar conta
+- `/entrar` — login
+- `/favoritos`, `/checkout` e `/pedido/:id` exigem login

@@ -26,13 +26,8 @@ export type CartItem = {
   quantity: number
 }
 
-export type UserAccount = {
-  name: string
-  email: string
-  password: string
-}
-
 export type SessionUser = {
+  id?: string
   name: string
   email: string
 }

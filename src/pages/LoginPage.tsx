@@ -1,102 +1,114 @@
 import { useState, type FormEvent } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { AuthCard } from '../components/auth/AuthCard'
+import { AuthField } from '../components/auth/AuthField'
 import { useAuth } from '../context/AuthContext'
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export function LoginPage() {
-  const { user, login, register } = useAuth()
-  const [mode, setMode] = useState<'login' | 'register'>('login')
-  const [name, setName] = useState('')
+  const { user, login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [emailError, setEmailError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [formError, setFormError] = useState('')
+  const [pending, setPending] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
-  const redirect = (location.state as { from?: string } | null)?.from ?? '/'
+  const from = (location.state as { from?: string; registered?: boolean } | null)?.from ?? '/'
+  const registered = Boolean((location.state as { registered?: boolean } | null)?.registered)
 
-  function onSubmit(event: FormEvent) {
+  async function onSubmit(event: FormEvent) {
     event.preventDefault()
-    const result =
-      mode === 'login' ? login(email, password) : register(name, email, password)
-    if (result) {
-      setError(result)
+    const nextEmailError = emailPattern.test(email.trim()) ? '' : 'Informe um e-mail válido.'
+    const nextPasswordError = password ? '' : 'A senha é obrigatória.'
+    setEmailError(nextEmailError)
+    setPasswordError(nextPasswordError)
+    setFormError('')
+    if (nextEmailError || nextPasswordError) return
+
+    setPending(true)
+    const error = await login(email, password)
+    setPending(false)
+    if (error) {
+      setFormError(error)
       return
     }
-    navigate(redirect)
+    navigate(from === '/cadastro' || from === '/entrar' ? '/' : from, { replace: true })
   }
 
   if (user) {
     return (
-      <div className="mx-auto max-w-md px-4 py-16 text-center">
-        <h1 className="text-3xl font-extrabold text-pitch">Olá, {user.name}</h1>
-        <p className="mt-2 text-neutral-600">Você já está conectado como {user.email}.</p>
+      <AuthCard
+        kicker="Sessão ativa"
+        title={`Olá, ${user.name}`}
+        subtitle={`Você já está conectado como ${user.email}.`}
+      >
         <button
           type="button"
-          className="mt-6 rounded-full bg-pitch px-5 py-2.5 font-semibold text-white"
-          onClick={() => navigate('/chuteiras')}
+          className="w-full rounded-full bg-lime py-3 font-semibold text-pitch transition hover:bg-lime-dark hover:text-white"
+          onClick={() => navigate('/')}
         >
-          Continuar comprando
+          Ir para a página inicial
         </button>
-      </div>
+      </AuthCard>
     )
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16">
-      <h1 className="text-3xl font-extrabold text-pitch">
-        {mode === 'login' ? 'Entrar' : 'Criar conta'}
-      </h1>
-      <p className="mt-2 text-neutral-600">
-        A sessão fica salva neste navegador enquanto não houver backend.
-      </p>
-      <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-3xl bg-white p-6 shadow-sm">
-        {mode === 'register' ? (
-          <Field label="Nome" value={name} onChange={setName} />
+    <AuthCard
+      kicker="Acesso"
+      title="Entrar"
+      subtitle="Use o e-mail e a senha da sua conta FutStore."
+    >
+      {registered ? (
+        <p className="mb-4 rounded-2xl bg-lime/40 px-4 py-3 text-sm font-medium text-pitch">
+          Conta criada com sucesso. Entre para continuar.
+        </p>
+      ) : null}
+      <form onSubmit={onSubmit} className="space-y-4" noValidate>
+        <AuthField
+          label="E-mail"
+          type="email"
+          value={email}
+          autoComplete="email"
+          error={emailError}
+          onChange={(value) => {
+            setEmail(value)
+            setEmailError('')
+            setFormError('')
+          }}
+        />
+        <AuthField
+          label="Senha"
+          type="password"
+          value={password}
+          autoComplete="current-password"
+          error={passwordError}
+          onChange={(value) => {
+            setPassword(value)
+            setPasswordError('')
+            setFormError('')
+          }}
+        />
+        {formError ? (
+          <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{formError}</p>
         ) : null}
-        <Field label="E-mail" type="email" value={email} onChange={setEmail} />
-        <Field label="Senha" type="password" value={password} onChange={setPassword} />
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
         <button
           type="submit"
-          className="w-full rounded-full bg-lime py-3 font-semibold text-pitch"
+          disabled={pending}
+          className="w-full rounded-full bg-lime py-3 font-semibold text-pitch transition hover:bg-lime-dark hover:text-white disabled:opacity-60"
         >
-          {mode === 'login' ? 'Entrar' : 'Cadastrar'}
+          {pending ? 'Entrando...' : 'Entrar'}
         </button>
-        <button
-          type="button"
-          className="w-full text-sm font-semibold text-pitch underline"
-          onClick={() => {
-            setMode(mode === 'login' ? 'register' : 'login')
-            setError(null)
-          }}
+        <Link
+          to="/cadastro"
+          className="block text-center text-sm font-semibold text-pitch underline decoration-pitch/30 underline-offset-4 hover:decoration-pitch"
         >
-          {mode === 'login' ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Entrar'}
-        </button>
+          Ainda não tenho uma conta? Criar conta
+        </Link>
       </form>
-    </div>
-  )
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  type = 'text',
-}: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-  type?: string
-}) {
-  return (
-    <label className="block text-sm font-medium text-pitch">
-      {label}
-      <input
-        required
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="mt-1 w-full rounded-2xl border border-pitch/15 px-4 py-3 outline-none focus:border-pitch"
-      />
-    </label>
+    </AuthCard>
   )
 }
