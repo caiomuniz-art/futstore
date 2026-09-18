@@ -15,9 +15,11 @@ import { OffersPage } from './pages/OffersPage'
 import { OrderPage } from './pages/OrderPage'
 import { ProductPage } from './pages/ProductPage'
 
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename === '/' ? undefined : basename}>
       <AuthProvider>
         <CartProvider>
           <FavoritesProvider>
